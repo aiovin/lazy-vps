@@ -646,7 +646,7 @@ print_check() {
 }
 
 # Small check of main server settings
-echo -e "\nChecking Ansible work..\n"
+echo -e "Checking Ansible work..\n"
 
 ufw status | grep -q "Status: active"
 print_check $? "UFW is running"
@@ -700,14 +700,13 @@ fi
 curl -s --max-time 10 "https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fraw.githubusercontent.com%2Faiovin%2Flazy-vps%2Frefs%2Fheads%2Fmain%2Fsetup.sh&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false" > "$count_file"
 stail[total]=$(cat "$count_file" | tail -3 | head -n 1 | awk '{print $7}')
 
-echo -e "\nServer setup completed."
+echo -e "\n\e[0;32mServer setup completed.\e[0m"
 echo "Total script runs - ${stail[total]}. Thanks for using it!"
 
-echo "Your connection command:"
-echo -e "\n\e[95mssh -i ~/.ssh/$new_hostname/id_ed25519_$new_hostname -p $new_ssh_port $new_user_name@$server_ip\e[0m"
+echo -e "\nYour connection command:"
+echo -e "\e[95mssh -i ~/.ssh/$new_hostname/id_ed25519_$new_hostname -p $new_ssh_port $new_user_name@$server_ip\e[0m"
 echo
-
-echo -e "For convenience, add the following lines to your \e[33mSSH configuration file\e[0m (~/.ssh/config):"
+echo -e "To enhance usability, you can add the following lines in your \e[33mSSH configuration file\e[0m (~/.ssh/config):"
 echo
 echo -e "\e[33mHost $new_hostname"
 echo -e "    HostName $server_ip"
@@ -717,12 +716,18 @@ echo -e "    User $new_user_name"
 echo -e "    Port $new_ssh_port"
 echo -e "    IdentityFile ~/.ssh/$new_hostname/id_ed25519_$new_hostname\e[0m"
 echo
-echo -e "Afterwards, you can connect to the server using the command '\e[33mssh $new_hostname\e[0m'"
-echo
+echo -e "Afterwards, you can connect to the server using the command '\e[33mssh $new_hostname\e[0m'\n"
 
 # Warning to check connection
-echo -e "\n\033[1;31mAttention!\033[0m"
+echo -e "\033[1;31mAttention!\033[0m"
 echo "Do not disconnect from the current session until you verify the connection"
 echo "via the new port using the SSH key. Make sure the connection works."
 # Perhaps you shouldn't..
 # echo -e "\nVisit author's site: https://150452.xyz"
+
+echo -e "
+\033[1;33mNote:\033[0m For an additional security check of your server,
+you can run the \e[1;34mVPS-Audit\e[0m script developed by Vernu.
+This tool provides an extra layer of verification for various aspects of your system's security.
+
+\e[1;34mcurl -Ls https://raw.githubusercontent.com/vernu/vps-audit/main/vps-audit.sh | sudo bash\e[0m"
