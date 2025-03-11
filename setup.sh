@@ -3,8 +3,13 @@
 
 # Strict error handling
 set -euo pipefail
-trap 'echo -e "\033[31mSomething went wrong.\033[0m Please describe the issue here: https://kutt.it/problem" && exit 1' ERR
-trap "echo 'Error on line $LINENO'; exit 1" ERR
+trap 'echo -e "\033[31mSomething went wrong on line $LINENO.\033[0m Please describe the issue here: https://kutt.it/problem"; exit 1' ERR
+
+# System check
+if ! [ "$(pidof systemd)" ]; then
+    echo "This script requires a systemd-based system (Ubuntu/Debian)."
+    exit 1
+fi
 
 # Check for root privileges
 if [ "$(id -u)" -ne 0 ]; then
@@ -138,18 +143,18 @@ done
 
 echo "Adding public SSH key."
 echo "Generate it manually."
-echo -e "You can use these commands for \e[34mPowerShell\e[0m:"
+echo -e "You can use these commands for \e[1;34mPowerShell\e[0m:"
 echo
 echo "# Create a folder."
-echo -e "\e[34mif (-not (Test-Path -Path \$env:USERPROFILE\.ssh\\\\$new_hostname)) {\e[0m"
-echo -e "\e[34m    New-Item -Path \$env:USERPROFILE\.ssh\\\\$new_hostname -ItemType Directory\e[0m"
-echo -e "\e[34m}\e[0m"
+echo -e "\e[1;34mif (-not (Test-Path -Path \$env:USERPROFILE\.ssh\\\\$new_hostname)) {\e[0m"
+echo -e "\e[1;34m    New-Item -Path \$env:USERPROFILE\.ssh\\\\$new_hostname -ItemType Directory\e[0m"
+echo -e "\e[1;34m}\e[0m"
 echo
 echo "# Generate an SSH key pair."
-echo -e "\e[34mssh-keygen -t ed25519 -f \$env:USERPROFILE\\.ssh\\\\$new_hostname\\id_ed25519_$new_hostname\e[0m"
+echo -e "\e[1;34mssh-keygen -t ed25519 -f \$env:USERPROFILE\\.ssh\\\\$new_hostname\\id_ed25519_$new_hostname\e[0m"
 echo
 echo "# Copy the public key to clipboard."
-echo -e "\e[34mGet-Content ~/.ssh/$new_hostname/id_ed25519_$new_hostname.pub | clip\e[0m"
+echo -e "\e[1;34mGet-Content ~/.ssh/$new_hostname/id_ed25519_$new_hostname.pub | clip\e[0m"
 echo
 while true; do
     read -p "Enter your public SSH key (Right-click to paste from clipboard): " public_ssh_key
@@ -167,7 +172,7 @@ while true; do
 done
 echo "Public SSH key successfully added."
 
-# Нагло устанавливаем максимальный размер системных журналов не спрашивая пользователя. (Зачем? есть же logrotate. Не забыть удалить это..)
+# Нагло устанавливаем максимальный размер системных журналов не спрашивая пользователя. (Зачем, есть же logrotate? Не забыть удалить это..)
 journal_system_max_use='250M'
 
 read -p "Do you want to configure ntfy notifications about server startup? (y/n, Enter for 'n') " setup_ntfy
@@ -641,7 +646,7 @@ print_check() {
 }
 
 # Small check of main server settings
-echo -e "\nПроверяем работу Ansible..\n"
+echo -e "\nChecking Ansible work..\n"
 
 ufw status | grep -q "Status: active"
 print_check $? "UFW is running"
@@ -678,7 +683,7 @@ fi
 sysctl net.ipv4.tcp_congestion_control | grep -q "bbr"
 print_check $? "TCP congestion control set to BBR"
 
-# Аinishing
+# Finishing
 # Get server IP to form connection link
 server_ip=$(hostname -I)
 if [[ -z "$server_ip" ]]; then
@@ -686,37 +691,38 @@ if [[ -z "$server_ip" ]]; then
 fi
 
 # Count script runs using hits.seeyoufarm.com
+declare -A stail
 if ! mktemp -u --suffix=RRC &>/dev/null; then
     count_file=$(mktemp)
 else
     count_file=$(mktemp --suffix=RRC)
 fi
-curl -s --max-time 10 "https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fraw.githubusercontent.com%2Faiovin%2Flazy-vps%2Frefs%2Fheads%2Fmain%2Fsetup.sh&count_bg=%239ACBF5&title_bg=%23555555&icon=&icon_color=%23555555&title=hits&edge_flat=false" > "$count_file"
+curl -s --max-time 10 "https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fraw.githubusercontent.com%2Faiovin%2Flazy-vps%2Frefs%2Fheads%2Fmain%2Fsetup.sh&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false" > "$count_file"
 stail[total]=$(cat "$count_file" | tail -3 | head -n 1 | awk '{print $7}')
 
 echo -e "\nServer setup completed."
 echo "Total script runs - ${stail[total]}. Thanks for using it!"
 
 echo "Your connection command:"
-echo -e "\nssh -i ~/.ssh/$new_hostname/id_ed25519_$new_hostname -p $new_ssh_port $new_user_name@$server_ip"
+echo -e "\n\e[95mssh -i ~/.ssh/$new_hostname/id_ed25519_$new_hostname -p $new_ssh_port $new_user_name@$server_ip\e[0m"
 echo
 
-echo "For convenience, add the following lines to your SSH configuration file (~/.ssh/config):"
+echo -e "For convenience, add the following lines to your \e[33mSSH configuration file\e[0m (~/.ssh/config):"
 echo
-echo "Host $new_hostname"
-echo "    HostName $server_ip"
-echo "    ServerAliveInterval 30"
-echo "    ServerAliveCountMax 3"
-echo "    User $new_user_name"
-echo "    Port $new_ssh_port"
-echo "    IdentityFile ~/.ssh/$new_hostname/id_ed25519_$new_hostname"
+echo -e "\e[33mHost $new_hostname"
+echo -e "    HostName $server_ip"
+echo -e "    ServerAliveInterval 30"
+echo -e "    ServerAliveCountMax 3"
+echo -e "    User $new_user_name"
+echo -e "    Port $new_ssh_port"
+echo -e "    IdentityFile ~/.ssh/$new_hostname/id_ed25519_$new_hostname\e[0m"
 echo
-echo "Afterwards, you can connect to the server using the command 'ssh $new_hostname'"
+echo -e "Afterwards, you can connect to the server using the command '\e[33mssh $new_hostname\e[0m'"
 echo
 
 # Warning to check connection
 echo -e "\n\033[1;31mAttention!\033[0m"
 echo "Do not disconnect from the current session until you verify the connection"
 echo "via the new port using the SSH key. Make sure the connection works."
-echo
-echo "Questions, suggestions, errops here: https://150452.xyz"
+# Perhaps you shouldn't..
+# echo -e "\nVisit author's site: https://150452.xyz"
