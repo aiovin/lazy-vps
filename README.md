@@ -6,7 +6,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/aiovin/lazy-vps/refs/heads/mai
 ```
 For **systemd-based systems** (tested on Ubuntu 24.04 and Debian 12).
 
-### What do:
+### What it does:
 - System update and dependencies installation
 - Creation of a new user with sudo privileges
 - Secure SSH configuration (key-based auth, custom port, root login disabled)
@@ -24,7 +24,7 @@ For **systemd-based systems** (tested on Ubuntu 24.04 and Debian 12).
 Скрипт для автоматизации базовой настройки VPS с использованием Ansible.  
 Для **систем на основе systemd** (протестировано на Ubuntu 24.04 и Debian 12).
 
-### Что делает:
+### Что делает скрипт:
 - Обновление системы и установка зависимостей
 - Создание нового пользователя с правами sudo
 - Настройку SSH (аутентификация по ключам, смена порта, отключение root-доступа)
