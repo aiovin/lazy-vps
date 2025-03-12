@@ -277,6 +277,9 @@ EOL
 # Encrypt file
 ansible-vault encrypt --vault-password-file "$vault_password_file" secrets.yml
 
+# Clear sensitive variable from memory
+unset root_password new_user_password vault_password
+
 # Remove temporary file with password
 rm -f "$vault_password_file"
 echo "secrets.yml successfully created."
