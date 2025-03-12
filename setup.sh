@@ -292,6 +292,7 @@ cat > setup_server.yml <<'EOL'
               - gzip
               - logrotate
               - python3-pip
+              - python3-venv
               - bash-completion
               - neofetch
             state: present
