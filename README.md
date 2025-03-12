@@ -4,7 +4,7 @@ Just run on a newly created VPS:
 ```
 bash <(curl -Ls https://raw.githubusercontent.com/aiovin/lazy-vps/refs/heads/main/setup.sh)
 ```
-For **systemd-based systems** (tested on Ubuntu 24.04 and Debian 12).
+For **systemd-based systems** (tested on Ubuntu 22.04, 24.04 and Debian 12).
 
 ### What it does:
 - System update and dependencies installation
@@ -23,6 +23,13 @@ After running the cript, it will first update your system and install Ansible al
 In addition to Ansible, the following will be installed: python3-pip, python3-venv, and neofetch. All other necessary utilities are typically pre-installed in modern distributions.
 No additional or unnecessary packages beyond these will be installed.
 
+---
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/aiovin/lazy-vps/main/script_finish.png" width="75%">
+  <br><i>Script finish</i>
+</p>
+
 > [!NOTE]
 > *Most likely, the whole script could've been done more easily just in bash, but I just felt like trying out Ansible for fun, so no complaints about the approach.*
 
@@ -31,7 +38,7 @@ No additional or unnecessary packages beyond these will be installed.
 # lazy vps setup (rus)
 
 Bash скрипт для базовой настройки чистого VPS при помощи Ansible.<br><br>
-Для **систем на основе systemd** (протестировано на Ubuntu 24.04 и Debian 12).
+Для **систем на основе systemd** (протестировано на Ubuntu 22.04, 24.04 и Debian 12).
 
 ### Что делает скрипт:
 - Обновление системы и установка зависимостей
@@ -51,4 +58,4 @@ Bash скрипт для базовой настройки чистого VPS п
 Никаких дополнительных или ненужных пакетов помимо этих установлено не будет.
 
 > [!NOTE]
-> *Скорее всего, весь скрипт можно было бы сделать проще, используя только bash, но мне хотелось попробовать Ansible ради интереса, так что к подходу претензий нет.*
+> *Скорее всего, весь скрипт можно было бы сделать проще и легче, используя только bash, но мне хотелось попробовать Ansible ради интереса, так что без претензий к подходу.*
