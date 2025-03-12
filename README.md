@@ -23,6 +23,9 @@ After running the cript, it will first update your system and install Ansible al
 In addition to Ansible, the following will be installed: python3-pip, python3-venv, and neofetch. All other necessary utilities are typically pre-installed in modern distributions.
 No additional or unnecessary packages beyond these will be installed.
 
+> [!NOTE]
+> *Most likely, the whole script could've been done more easily just in bash, but I just felt like trying out Ansible for fun, so no complaints about the approach.*
+
 ---
 
 # lazy vps setup (rus)
@@ -46,3 +49,6 @@ Bash скрипт для базовой настройки чистого VPS п
 ### Устанавливаемые пакеты:
 Кроме Ansible будут установлены python3-pip, python3-venv, neofetch. Все остальные необходимые утилиты обычно предустановлены в современных дистрибутивах.
 Никаких дополнительных или ненужных пакетов помимо этих установлено не будет.
+
+> [!NOTE]
+> *Скорее всего, весь скрипт можно было бы сделать проще, используя только bash, но мне хотелось попробовать Ansible ради интереса, так что к подходу претензий нет.*
