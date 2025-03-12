@@ -35,7 +35,7 @@ while true; do
         read -sp "Enter a new password for root: " root_password
         echo
         if [ -z "$root_password" ]; then
-            echo "Error: Password cannot be empty. Try again."
+            echo -e "\nError: Password cannot be empty. Try again."
         else
             break
         fi
@@ -45,14 +45,14 @@ while true; do
         read -sp "Repeat the new password for root: " root_password_confirm
         echo
         if [ -z "$root_password_confirm" ]; then
-            echo "Error: Password cannot be empty. Try again."
+            echo -e "\nError: Password cannot be empty. Try again."
         else
             break
         fi
 
     done
     if [ "$root_password" != "$root_password_confirm" ]; then
-        echo "Passwords do not match. Try again."
+        echo -e "\nPasswords do not match. Try again."
     else
         echo "New password for root successfully set."
         break
@@ -60,22 +60,23 @@ while true; do
 done
 
 # Create a new user
-echo "Creating a new user."
+echo -e "\nCreating a new user."
 while true; do
     read -p "Enter username: " new_user_name
     if [ -z "$new_user_name" ]; then
-        echo "Error: Username cannot be empty. Try again."
+        echo -e "\nError: Username cannot be empty. Try again."
     else
         break
     fi
 done
 
+echo
 while true; do
     while true; do
         read -sp "Set a password for user $new_user_name: " new_user_password
         echo
         if [ -z "$new_user_password" ]; then
-            echo "Error: Password cannot be empty. Try again."
+            echo -e "\nError: Password cannot be empty. Try again."
         else
             break
         fi
@@ -85,14 +86,14 @@ while true; do
         read -sp "Repeat the password for user $new_user_name: " new_user_password_confirm
         echo
         if [ -z "$new_user_password_confirm" ]; then
-            echo "Error: Password cannot be empty. Try again."
+            echo -e "\nError: Password cannot be empty. Try again."
         else
             break
         fi
     done
 
     if [ "$new_user_password" != "$new_user_password_confirm" ]; then
-        echo "Passwords do not match. Try again."
+        echo -e "\nPasswords do not match. Try again."
     else
         echo "Password for user $new_user_name successfully set."
         break
@@ -100,6 +101,7 @@ while true; do
 done
 
 # Set a new SSH port
+echo
 while true; do
     read -p "Enter a new SSH port (between 1024 and 65535). Press Enter to generate a random port: " new_ssh_port
 
@@ -113,35 +115,37 @@ while true; do
         echo "Your SSH connection port: $new_ssh_port"
         break
     else
-        echo "Error: The entered port must be a number between 1024 and 65535. Try again."
+        echo -e "\nError: The entered port must be a number between 1024 and 65535. Try again."
     fi
 done
 
 # Set timezone
+echo
 read -p "Specify the timezone (e.g., Europe/Moscow). For reference, visit: https://wikipedia.org/wiki/List_of_tz_database_time_zones). Press Enter to set UTC by default: " timezone
 timezone=${timezone:-"Etc/UTC"}
+echo "Timezone set to: $timezone"
 
 # Set a new server name
 current_hostname=$(hostname)
-
+echo
 while true; do
     read -p "Enter a new hostname (Press Enter to keep $current_hostname): " new_hostname
 
     if [ -z "$new_hostname" ]; then
         new_hostname=$current_hostname
-        echo "Hostname left unchanged."
+        echo "Hostname left unchanged ($new_hostname)."
         break
     fi
 
     if [[ "$new_hostname" =~ ^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?$ ]]; then
-        echo "New hostname set."
+        echo "New hostname set to: $new_hostname"
         break
     else
         echo "Error: Invalid hostname. Hostname must contain only letters, numbers, and hyphens, cannot start or end with a hyphen, and must be between 1 and 63 characters long."
     fi
 done
 
-echo "Adding public SSH key."
+echo -e "\nAdding public SSH key."
 echo "Generate it manually."
 echo -e "You can use these commands for \e[1;34mPowerShell\e[0m:"
 echo
@@ -160,12 +164,12 @@ while true; do
     read -p "Enter your public SSH key (Right-click to paste from clipboard): " public_ssh_key
 
     if [[ -z "$public_ssh_key" ]]; then
-        echo "Error: Key cannot be empty. Try again."
+        echo -e "\nError: Key cannot be empty. Try again."
         continue
     fi
 
-    if [[ ! "$public_ssh_key" =~ ^(ssh-rsa|ssh-ed25519|ecdsa-sha2-nistp256|ecdsa-sha2-nistp384|ecdsa-sha2-nistp521) ]]; then
-        echo "Error: The entered text does not look like a public SSH key. Try again."
+    if [[ ! "$public_ssh_key" =~ ^(ssh-rsa|ssh-ed25519|ecdsa-sha2-nistp256|ecdsa-sha2-nistp384|ecdsa-sha2-nistp521|sk-ssh-ed25519) ]]; then
+        echo -e "\nError: The entered text does not look like a public SSH key. Try again."
         continue
     fi
     break
@@ -175,6 +179,7 @@ echo "Public SSH key successfully added."
 # Нагло устанавливаем максимальный размер системных журналов не спрашивая пользователя. (Зачем, есть же logrotate? Не забыть удалить это..)
 journal_system_max_use='250M'
 
+echo
 read -p "Do you want to configure ntfy notifications about server startup? (y/n, Enter for 'n') " setup_ntfy
 setup_ntfy=${setup_ntfy:-n}
 
@@ -190,6 +195,7 @@ else
     ntfy_startup_topic=""
 fi
 
+echo
 read -p "Do you want to configure ntfy notifications about low disk space? (y/n, Enter for 'n'): " setup_disk_monitor
 setup_disk_monitor=${setup_disk_monitor:-n}
 
@@ -200,12 +206,12 @@ if [[ "$setup_disk_monitor" =~ ^[Yy]$ ]]; then
     disk_threshold=${disk_threshold:-90}
 
     while [[ "$disk_threshold" -lt 0 || "$disk_threshold" -gt 100 ]]; do
-        echo "Error: Threshold must be between 0 and 100."
+        echo -e "\nError: Threshold must be between 0 and 100."
         read -p "Enter threshold for low disk space notifications: " disk_threshold
     done
 
-    echo "ntfy notifications when disk space reaches $disk_threshold% with topic $ntfy_disk_topic has configured."
-    echo "By default, '/' is monitored. Add other mount points if needed:"
+    echo -e "\nntfy notifications when disk space reaches $disk_threshold% with topic $ntfy_disk_topic has configured."
+    echo "By default '/' is monitored. Add other mount points if needed lated:"
     echo "/home/$new_user_name/scripts/low-disk-space-notify.sh"
 else
     echo "The script will not be installed."
@@ -214,14 +220,30 @@ else
 fi
 
 # Request Vault password
+echo
 while true; do
-    read -sp "Set a Vault password (you'll need to enter it once below to run Ansible): " vault_password
-    echo
-    read -sp "Repeat Vault password: " vault_password_confirm
-    echo
+    while true; do
+        read -sp "Set a Vault password (you'll need to enter it once below to run Ansible): " vault_password
+        echo
+        if [ -z "$vault_password" ]; then
+            echo -e "\nError: Vault password cannot be empty. Try again."
+        else
+            break
+        fi
+    done
+
+    while true; do
+        read -sp "Repeat Vault password: " vault_password_confirm
+        echo
+        if [ -z "$vault_password_confirm" ]; then
+            echo -e "\nError: Vault password confirmation cannot be empty. Try again."
+        else
+            break
+        fi
+    done
 
     if [ "$vault_password" != "$vault_password_confirm" ]; then
-        echo "Passwords do not match. Try again."
+        echo -e "\nPasswords do not match. Try again."
     else
         echo "Vault password successfully set."
         break
@@ -233,7 +255,7 @@ vault_password_file=$(mktemp)
 echo "$vault_password" > "$vault_password_file"
 
 # Create encrypted file
-echo "Creating secrets.yml.."
+echo -e "\nCreating secrets.yml.."
 cat > secrets.yml <<EOL
 new_user_name: "$new_user_name"
 new_user_password: "$new_user_password"
@@ -257,17 +279,16 @@ ansible-vault encrypt --vault-password-file "$vault_password_file" secrets.yml
 
 # Remove temporary file with password
 rm -f "$vault_password_file"
-
 echo "secrets.yml successfully created."
 
+echo "Creating inventory_file.yml and setup_server.yml.."
+
 # Create inventory_file.yml
-echo "Creating inventory_file.yml.."
 cat > inventory_file.yml <<EOL
 localhost ansible_connection=local
 EOL
 
 # Create playbook setup_server.yml
-echo "Creating setup_server.yml.."
 cat > setup_server.yml <<'EOL'
 ---
 - hosts: all
@@ -600,10 +621,10 @@ cat > setup_server.yml <<'EOL'
         - debug:
             msg: "Something went wrong. Please describe the issue here: https://kutt.it/problem"
 EOL
+echo "Done."
 
 # Display entered data for confirmation
-echo
-echo "Please confirm your setup:"
+echo -e "\nPlease confirm your setup:"
 echo
 echo "New user name: $new_user_name"
 echo "SSH port: $new_ssh_port"
@@ -627,13 +648,13 @@ while true; do
     read -p "Are all the details correct? (y/n): " confirm
     case $confirm in
         [Yy]* ) echo "Great, running the Ansible playbook to configure the server.."; break;;
-        [Nn]* ) echo "Exit."; exit 0;;
-        * ) echo "Пожалуйста, введите 'y' для продолжения или 'n' для выхода.";;
+        [Nn]* ) echo -e "Exit.\n"; exit 0;;
+        * ) echo -e "\nPlease enter 'y' to continue or 'n' to exit.";;
     esac
 done
+echo
 
 # Run playbook
-echo "Enter that Vault password."
 ansible-playbook -i inventory_file.yml setup_server.yml --diff --ask-vault-pass
 
 runuser -u $new_user_name -- neofetch
@@ -686,23 +707,25 @@ print_check $? "TCP congestion control set to BBR"
 
 # Finishing
 # Get server IP to form connection link
-server_ip=$(hostname -I)
-if [[ -z "$server_ip" ]]; then
-    server_ip="server_ip"
-fi
+server_ip=$(curl -s --max-time 5 ident.me || hostname -I | awk '{print $1}')
 
 # Count script runs using hits.seeyoufarm.com
-declare -A stail
+declare total_runs
 if ! mktemp -u --suffix=RRC &>/dev/null; then
     count_file=$(mktemp)
 else
     count_file=$(mktemp --suffix=RRC)
 fi
+
 curl -s --max-time 10 "https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fraw.githubusercontent.com%2Faiovin%2Flazy-vps%2Frefs%2Fheads%2Fmain%2Fsetup.sh&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false" > "$count_file"
-stail[total]=$(cat "$count_file" | tail -3 | head -n 1 | awk '{print $7}')
+total_runs=$(cat "$count_file" | tail -3 | head -n 1 | awk '{print $7}')
+
+if ! [[ "$total_runs" =~ ^[0-9]+$ ]]; then
+    total_runs="smth_went_wrong_lol"
+fi
 
 echo -e "\n\e[0;32mServer setup completed.\e[0m"
-echo "Total script runs - ${stail[total]}. Thanks for using it!"
+echo "Total script runs - $total_runs. Thanks for using it!"
 
 echo -e "\nYour connection command:"
 echo -e "\e[95mssh -i ~/.ssh/$new_hostname/id_ed25519_$new_hostname -p $new_ssh_port $new_user_name@$server_ip\e[0m"
