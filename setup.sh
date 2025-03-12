@@ -22,7 +22,7 @@ echo "Updating the system and installing dependencies.."
 apt update && apt upgrade -y && apt install ansible python3 python3-passlib -y
 
 # Create working directory for Ansible
-echo "Creating Ansible working directory (/root/ansible).."
+echo -e "\nCreating Ansible working directory (/root/ansible).."
 mkdir -p /root/ansible
 cd /root/ansible
 
@@ -63,8 +63,14 @@ done
 echo -e "\nCreating a new user."
 while true; do
     read -p "Enter username: " new_user_name
+    
     if [ -z "$new_user_name" ]; then
         echo -e "\nError: Username cannot be empty. Try again."
+        continue
+    fi
+    
+    if [[ ! "$new_user_name" =~ ^[a-zA-Z_][a-zA-Z0-9_-]*$ ]]; then
+        echo -e "\nError: Username contains invalid characters. Username can only contain letters, numbers, hyphens, and underscores. It must also start with a letter or underscore. Try again."
     else
         break
     fi
@@ -129,7 +135,7 @@ echo "Timezone set to: $timezone"
 current_hostname=$(hostname)
 echo
 while true; do
-    read -p "Enter a new hostname (Press Enter to keep $current_hostname): " new_hostname
+    read -p "Enter a new hostname (Press Enter to keep '$current_hostname'): " new_hostname
 
     if [ -z "$new_hostname" ]; then
         new_hostname=$current_hostname
@@ -141,7 +147,7 @@ while true; do
         echo "New hostname set to: $new_hostname"
         break
     else
-        echo "Error: Invalid hostname. Hostname must contain only letters, numbers, and hyphens, cannot start or end with a hyphen, and must be between 1 and 63 characters long."
+        echo -e "\nError: Invalid hostname. Hostname must contain only letters, numbers, and hyphens, cannot start or end with a hyphen, and must be between 1 and 63 characters long."
     fi
 done
 
@@ -188,11 +194,13 @@ if [[ "$setup_ntfy" =~ ^[Yy]$ ]]; then
     ntfy_startup_tag=${ntfy_startup_tag:-'computer'}
     read -p "Enter your ntfy topic (Press Enter to generate 'server-startup-<6-random-digits>'): " ntfy_startup_topic
     ntfy_startup_topic=${ntfy_startup_topic:-"server-startup-$(shuf -i 100000-999999 -n 1)"}
-    echo "Startup ntfy notifications with tag $ntfy_startup_tag with topic $ntfy_startup_topic has configured."
+    echo "Startup ntfy notifications with tag '$ntfy_startup_tag' and topic '$ntfy_startup_topic' has configured."
+    setup_ntfy="yes"
 else
     echo "The server startup notifications will not be set up."
     ntfy_startup_tag=""
     ntfy_startup_topic=""
+    setup_ntfy="no"
 fi
 
 echo
@@ -210,13 +218,15 @@ if [[ "$setup_disk_monitor" =~ ^[Yy]$ ]]; then
         read -p "Enter threshold for low disk space notifications: " disk_threshold
     done
 
-    echo -e "\nntfy notifications when disk space reaches $disk_threshold% with topic $ntfy_disk_topic has configured."
+    echo -e "\nntfy notifications to '$ntfy_disk_topic' when disk space reaches $disk_threshold% has configured."
     echo "By default '/' is monitored. Add other mount points if needed lated:"
     echo "/home/$new_user_name/scripts/low-disk-space-notify.sh"
+    setup_disk_monitor="yes"
 else
     echo "The script will not be installed."
     ntfy_disk_topic=""
     disk_threshold=""
+    setup_disk_monitor="no"
 fi
 
 # Request Vault password
@@ -368,6 +378,13 @@ cat > setup_server.yml <<'EOL'
             line: 'Port {{ new_ssh_port }}'
             state: present
 
+        - name: Opening new SSH port
+          ufw:
+            rule: limit
+            port: "{{ new_ssh_port }}"
+            proto: tcp
+            state: enabled
+
         - name: Disabling root login
           lineinfile:
             path: /etc/ssh/sshd_config
@@ -400,30 +417,6 @@ cat > setup_server.yml <<'EOL'
             regexp: '^(Port|PermitRootLogin|PasswordAuthentication|PubkeyAuthentication)'
             replace: '# \1'
           when: cloud_init_file.stat.exists
-
-        - name: Opening new SSH port
-          ufw:
-            rule: limit
-            port: "{{ new_ssh_port }}"
-            proto: tcp
-            state: enabled
-
-        - name: Activating UFW
-          ufw:
-            state: enabled
-          become: yes
-
-        - name: Enabling UFW service
-          systemd:
-            name: ufw
-            state: started
-            enabled: yes
-          become: yes
-
-        - name: Restarting SSH service
-          service:
-            name: ssh
-            state: restarted
 
         - name: Adding useful aliases to ~/.bashrc
           blockinfile:
@@ -495,11 +488,10 @@ cat > setup_server.yml <<'EOL'
               WantedBy=multi-user.target
           when: ntfy_startup_topic is defined
 
-        - name: Enabling and starting startup-notify.service
+        - name: Enabling startup-notify.service
           systemd:
             name: startup-notify.service
             enabled: yes
-            state: started
           when: ntfy_startup_topic is defined
 
         - name: Creating user scripts folder (~/scripts)
@@ -615,7 +607,21 @@ cat > setup_server.yml <<'EOL'
               More info: https://kutt.it/logrotate 
           when: logrotate_d_files.files is defined and logrotate_d_files.files
 
-        - name: skipping
+        - name: Restarting SSH service
+          service:
+            name: ssh
+            state: restarted
+            enabled: yes
+          become: yes
+
+        - name: Activating UFW service
+          systemd:
+            name: ufw
+            state: started
+            enabled: yes
+          become: yes
+
+        - name: skip
           debug:
             msg: Вот такого точно не произойдет!
           when: not (logrotate_d_files.files is defined and logrotate_d_files.files)
@@ -636,12 +642,12 @@ echo "New hostname: $new_hostname"
 echo "Startup notifications: $setup_ntfy"
 echo "Low disk spase notifications: $setup_disk_monitor"
 
-if [[ "$setup_ntfy" =~ ^[Yy]$ ]]; then
+if [[ "$setup_ntfy" == "yes" ]]; then
     echo "   - Tag for server startup: $ntfy_startup_tag"
     echo "   - Topic for server startup: $ntfy_startup_topic"
 fi
 
-if [[ "$setup_disk_monitor" =~ ^[Yy]$ ]]; then
+if [[ "$setup_disk_monitor" == "yes" ]]; then
     echo "   - Topic for disk space notifications: $ntfy_disk_topic"
 fi
 echo
@@ -747,8 +753,8 @@ echo -e "Afterwards, you can connect to the server using the command '\e[33mssh 
 
 # Warning to check connection
 echo -e "\033[1;31mAttention!\033[0m"
-echo "Do not disconnect from the current session until you verify the connection"
-echo "via the new port using the SSH key. Make sure the connection works."
+echo "Do not disconnect from the current session until you test the new connection."
+echo "Make sure it works. After that, reboot the server."
 # Perhaps you shouldn't..
 # echo -e "\nVisit author's site: https://150452.xyz"
 
