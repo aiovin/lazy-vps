@@ -2,7 +2,7 @@
 Bash script for basic VPS setup using Ansible.<br><br>
 Just run on a newly created VPS:
 ```
-bash <(curl -Ls https://raw.githubusercontent.com/aiovin/lazy-vps/refs/heads/main/setup.sh)
+bash -c "$(curl -L https://raw.githubusercontent.com/aiovin/lazy-vps/refs/heads/main/setup.sh)"
 ```
 For **systemd-based systems** (tested on Ubuntu 22.04, 24.04 and Debian 12).
 
