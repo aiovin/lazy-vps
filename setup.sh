@@ -13,7 +13,7 @@ fi
 
 # Check for root privileges
 if [ "$(id -u)" -ne 0 ]; then
-  echo "This script must be run as root or with sudo privileges." 
+  echo "This script must be run as root or with root privileges." 
   exit 1
 fi
 
