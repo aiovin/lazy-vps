@@ -712,8 +712,15 @@ else
     echo -e "\e[31m[FAIL]\e[0m File 50-cloud-init.conf not found"
 fi
 
-sysctl net.ipv4.tcp_congestion_control | grep -q "bbr"
-print_check $? "TCP congestion control set to BBR"
+# Temporarily turning off strict error checking to prevent the script from crashing on some virtual machines
+{
+    set +e
+    sysctl net.ipv4.tcp_congestion_control | grep -q "bbr"
+    check_status=$?
+    set -e
+} || check_status=1
+
+print_check $check_status "TCP congestion control set to BBR"
 
 # Finishing
 # Get server IP to form connection link
