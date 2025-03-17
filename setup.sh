@@ -6,7 +6,7 @@ set -euo pipefail
 trap 'echo -e "\033[31mSomething went wrong on line $LINENO.\033[0m Please describe the issue here: https://kutt.it/problem"; exit 1' ERR
 
 # System check
-if ! [ "$(pidof systemd)" ]; then
+if ! [ -d "/run/systemd/system" ] || ! [ "$(ps -p 1 -o comm=)" = "systemd" ]; then
     echo "This script requires a systemd-based system (Ubuntu/Debian)."
     exit 1
 fi
