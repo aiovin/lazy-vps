@@ -431,6 +431,7 @@ cat > setup_server.yml <<'EOL'
         - name: Configuring timezone
           timezone:
             name: "{{ timezone }}"
+            ignoreerrors: true
 
         - name: Changing hostname
           hostname:
