@@ -426,6 +426,7 @@ cat > setup_server.yml <<'EOL'
               alias cls='clear'
               alias сды='clear'
               alias act='source venv/bin/activate'
+              alias x='exit'
               export EDITOR=nano
 
         - name: Configuring timezone
