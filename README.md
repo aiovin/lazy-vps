@@ -11,7 +11,7 @@ For **systemd-based systems** (tested on Ubuntu 22.04, 24.04 and Debian 12).
 - Creation of a new user with sudo privileges
 - Basic SSH and UFW setup (allow SSH key only, changing SSH port, root login disabled, limit connection attempts, block all ports except SSH)
 - Timezone and hostname configuration
-- Adds useful shell aliases (`cls` for clearing the terminal and `act` for activating Python virtual environments)
+- Adds useful shell aliases (`cls` for clearing the terminal, `act` for activating Python virtual environments and `x` for the `exit`)
 - Set the congestion control algorithm to BBR
 - Optional ntfy.sh notifications (server startup and disk space alerts)
 - Generates ready-to-use SSH connection command
@@ -45,7 +45,7 @@ Bash скрипт для базовой настройки чистого VPS п
 - Создание нового пользователя с правами sudo
 - Базовая настройка SSH и UFW (вход только по SSH-ключам, изменение порта SSH, отключение входа для root, ограничение попыток подключения и закрытие всех портов кроме SSH)
 - Установку временной зоны и имени хоста
-- Добавление полезных алиасов (`cls`/`сды` для очистки терминала и `act` для активации виртуального окружения Python)
+- Добавление полезных алиасов (`cls`/`сды` для очистки терминала, `act` для активации виртуального окружения Python и `x` для `exit`)
 - Установка алгоритма управления перегрузкой на BBR
 - Опциональные уведомления через ntfy.sh (старт сервера и контроль дискового пространства)
 - Генерацию готовой команды для SSH-подключения
