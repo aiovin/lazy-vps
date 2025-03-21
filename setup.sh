@@ -1,9 +1,16 @@
 #!/bin/bash
 # https://github.com/aiovin/lazy-vps
 
-# Strict error handling
-set -euo pipefail
-trap 'echo -e "\033[31mSomething went wrong on line $LINENO.\033[0m Please describe the issue here: https://kutt.it/problem"; exit 1' ERR
+# Enable strict mode, but don't exit the script on errors
+set -uo pipefail
+
+# Function to handle errors
+handle_error() {
+    echo -e "\033[31mSomething went wrong on line $1.\033[0m Please describe the issue here: https://kutt.it/problem"
+}
+
+# Set trap to catch errors and call the error handling function, but don't exit the script
+trap 'handle_error $LINENO' ERR
 
 # System check
 if ! [ -d "/run/systemd/system" ] || ! [ "$(ps -p 1 -o comm=)" = "systemd" ]; then
@@ -16,6 +23,23 @@ if [ "$(id -u)" -ne 0 ]; then
   echo "This script must be run as root or with root privileges." 
   exit 1
 fi
+
+# A variable to run the script without script run counter (for creator's test purpose)
+NOHIT=""
+
+# Ansible verbose level
+VERBOSE=""
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -v)   VERBOSE="-v" ;;
+        -vv)  VERBOSE="-vv" ;;
+        -vvv) VERBOSE="-vvv" ;;
+        -nohit) NOHIT="yes" ;;
+        -*)   echo "Invalid option: $1"; exit 1 ;;
+    esac
+    shift
+done
 
 # Install necessary packages
 echo "Updating the system and installing dependencies.."
@@ -428,15 +452,17 @@ cat > setup_server.yml <<'EOL'
               alias act='source venv/bin/activate'
               alias x='exit'
               export EDITOR=nano
+          ignore_errors: true
 
         - name: Configuring timezone
           timezone:
             name: "{{ timezone }}"
-            ignoreerrors: true
+          ignore_errors: true
 
         - name: Changing hostname
           hostname:
             name: "{{ new_hostname }}"
+          ignore_errors: true
 
         - name: Updating /etc/hosts
           lineinfile:
@@ -444,6 +470,7 @@ cat > setup_server.yml <<'EOL'
             regexp: '^127.0.1.1'
             line: '127.0.1.1 {{ new_hostname }}'
             state: present
+          ignore_errors: true
 
         - name: Changing TCP Congestion Control
           sysctl:
@@ -451,7 +478,7 @@ cat > setup_server.yml <<'EOL'
             value: fq
             state: present
             reload: yes
-            ignoreerrors: true
+          ignore_errors: true
 
         - name: Applying BBR changes
           sysctl:
@@ -459,7 +486,7 @@ cat > setup_server.yml <<'EOL'
             value: bbr
             state: present
             reload: yes
-            ignoreerrors: true
+          ignore_errors: true
 
         - name: Setting limits on maximum size of system logs
           lineinfile:
@@ -467,11 +494,13 @@ cat > setup_server.yml <<'EOL'
             regexp: '^#?SystemMaxUse='
             line: 'SystemMaxUse={{ journal_system_max_use }}'
             state: present
+          ignore_errors: true
 
         - name: Restarting journald service
           service:
             name: systemd-journald
             state: restarted
+          ignore_errors: true
 
         - name: Creating systemd service startup-notify.service
           copy:
@@ -489,12 +518,14 @@ cat > setup_server.yml <<'EOL'
               [Install]
               WantedBy=multi-user.target
           when: ntfy_startup_topic is defined
+          ignore_errors: true
 
         - name: Enabling startup-notify.service
           systemd:
             name: startup-notify.service
             enabled: yes
           when: ntfy_startup_topic is defined
+          ignore_errors: true
 
         - name: Creating user scripts folder (~/scripts)
           file:
@@ -504,6 +535,7 @@ cat > setup_server.yml <<'EOL'
             group: "{{ new_user_name }}"
             mode: '0755'
           when: ntfy_disk_topic is defined
+          ignore_errors: true
 
         - name: Creating low-disk-space-notify.sh script
           copy:
@@ -540,6 +572,7 @@ cat > setup_server.yml <<'EOL'
                 fi
               done
           when: ntfy_disk_topic is defined
+          ignore_errors: true
 
         - name: Creating systemd service low-disk-space-notify.sh.service
           copy:
@@ -561,6 +594,7 @@ cat > setup_server.yml <<'EOL'
               [Install]
               WantedBy=multi-user.target
           when: ntfy_disk_topic is defined
+          ignore_errors: true
 
         - name: Creating low-disk-space-notify.timer (every 15 minutes)
           copy:
@@ -579,6 +613,7 @@ cat > setup_server.yml <<'EOL'
               [Install]
               WantedBy=timers.target
           when: ntfy_disk_topic is defined
+          ignore_errors: true
 
         - name: Reloading systemd daemon
           systemd:
@@ -590,6 +625,7 @@ cat > setup_server.yml <<'EOL'
             enabled: yes
             state: started
           when: ntfy_disk_topic is defined
+          ignore_errors: true
 
         - name: Checking logrotate installation
           find:
@@ -597,6 +633,7 @@ cat > setup_server.yml <<'EOL'
             patterns: "*"
             file_type: file
           register: logrotate_d_files
+          ignore_errors: true
 
         - name: Information about logrotate
           debug:
@@ -608,6 +645,7 @@ cat > setup_server.yml <<'EOL'
               Don't forget to add log rotation for your applications.
               More info: https://kutt.it/logrotate 
           when: logrotate_d_files.files is defined and logrotate_d_files.files
+          ignore_errors: true
 
         - name: Restarting SSH service
           service:
@@ -666,7 +704,7 @@ done
 echo
 
 # Run playbook
-ansible-playbook -i inventory_file.yml setup_server.yml --diff --ask-vault-pass
+ansible-playbook -i inventory_file.yml setup_server.yml --diff --ask-vault-pass $VERBOSE
 
 runuser -u $new_user_name -- neofetch
 
@@ -735,7 +773,9 @@ else
     count_file=$(mktemp --suffix=RRC)
 fi
 
-curl -s --max-time 10 "https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fraw.githubusercontent.com%2Faiovin%2Flazy-vps%2Frefs%2Fheads%2Fmain%2Fsetup.sh&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false" > "$count_file" || true
+if [[ "$NOHIT" != "yes" ]]; then
+  curl -s --max-time 10 "https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fraw.githubusercontent.com%2Faiovin%2Flazy-vps%2Frefs%2Fheads%2Fmain%2Fsetup.sh&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false" > "$count_file" || true
+fi
 total_runs=$(cat "$count_file" | tail -3 | head -n 1 | awk '{print $7}')
 
 if ! [[ "$total_runs" =~ ^[0-9]+$ ]]; then
