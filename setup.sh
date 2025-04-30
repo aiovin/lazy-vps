@@ -765,7 +765,7 @@ print_check $check_status "TCP congestion control set to BBR"
 # Get server IP to form connection link
 server_ip=$(curl -s --max-time 5 ident.me || hostname -I | awk '{print $1}')
 
-# Count script runs using hits.seeyoufarm.com
+# Count script runs using hitscounter.dev
 declare total_runs
 if ! mktemp -u --suffix=RRC &>/dev/null; then
     count_file=$(mktemp)
@@ -773,10 +773,12 @@ else
     count_file=$(mktemp --suffix=RRC)
 fi
 
+declare api_url
+api_url="https://hitscounter.dev/api/hit?url=https%3A%2F%2Fraw.githubusercontent.com%2Faiovin%2Flazy-vps%2Frefs%2Fheads%2Fmain%2Fsetup.sh"
 if [[ "$NOHIT" != "yes" ]]; then
-  curl -s --max-time 10 "https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fraw.githubusercontent.com%2Faiovin%2Flazy-vps%2Frefs%2Fheads%2Fmain%2Fsetup.sh&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false" > "$count_file" || true
+  curl -s --max-time 10 "$api_url" > "$count_file" || true
 fi
-total_runs=$(cat "$count_file" | tail -3 | head -n 1 | awk '{print $7}')
+total_runs=$(grep -oP '<title>\K[0-9]+ / [0-9]+' "$count_file" | awk '{print $3}')
 
 if ! [[ "$total_runs" =~ ^[0-9]+$ ]]; then
     total_runs="smth_went_wrong_lol"
