@@ -751,37 +751,32 @@ else
     echo -e "\e[31m[FAIL]\e[0m File 50-cloud-init.conf not found"
 fi
 
-# Temporarily turning off strict error checking to prevent the script from crashing on some virtual machines
-{
-    set +e
-    sysctl net.ipv4.tcp_congestion_control | grep -q "bbr"
-    check_status=$?
-    set -e
-} || check_status=1
-
+sysctl net.ipv4.tcp_congestion_control 2>/dev/null | grep -q "bbr"
+check_status=$?
 print_check $check_status "TCP congestion control set to BBR"
 
 # Finishing
+
 # Get server IP to form connection link
 server_ip=$(curl -s --max-time 5 ident.me || hostname -I | awk '{print $1}')
 
 # Count script runs using hitscounter.dev
-declare total_runs
 if ! mktemp -u --suffix=RRC &>/dev/null; then
     count_file=$(mktemp)
 else
     count_file=$(mktemp --suffix=RRC)
 fi
 
-declare api_url
 api_url="https://hitscounter.dev/api/hit?url=https%3A%2F%2Fraw.githubusercontent.com%2Faiovin%2Flazy-vps%2Frefs%2Fheads%2Fmain%2Fsetup.sh"
-if [[ "$NOHIT" != "yes" ]]; then
-  curl -s --max-time 10 "$api_url" > "$count_file" || true
-fi
-total_runs=$(grep -oP '<title>\K[0-9]+ / [0-9]+' "$count_file" | awk '{print $3}')
 
-if ! [[ "$total_runs" =~ ^[0-9]+$ ]]; then
-    total_runs="smth_went_wrong_lol"
+if [[ "$NOHIT" == "yes" ]]; then
+    total_runs="disabled"
+else
+    curl -s --max-time 10 "$api_url" > "$count_file" 2>/dev/null
+    total_runs=$(grep -oP '<title>\K[0-9]+ / [0-9]+' "$count_file" | awk '{print $3}')
+    if ! [[ "$total_runs" =~ ^[0-9]+$ ]]; then
+        total_runs="smth_went_wrong_lol"
+    fi
 fi
 
 echo -e "\n\e[0;32mServer setup completed.\e[0m"
