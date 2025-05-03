@@ -661,6 +661,10 @@ cat > setup_server.yml <<'EOL'
             enabled: yes
           become: yes
 
+        - name: Reload UFW
+          command: ufw reload
+          ignore_errors: true
+
         - name: skip
           debug:
             msg: Вот такого точно не произойдет!
