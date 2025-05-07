@@ -452,6 +452,7 @@ cat > setup_server.yml <<'EOL'
               alias act='source venv/bin/activate'
               alias x='exit'
               export EDITOR=nano
+              alias tb="nc termbin.com 9999"
               listen() { sudo ss -tulnp | grep ":$1"; }
           ignore_errors: true
 
