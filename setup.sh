@@ -452,6 +452,7 @@ cat > setup_server.yml <<'EOL'
               alias act='source venv/bin/activate'
               alias x='exit'
               export EDITOR=nano
+              listen() { sudo ss -tulnp | grep ":$1"; }
           ignore_errors: true
 
         - name: Configuring timezone
