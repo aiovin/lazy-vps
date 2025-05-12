@@ -42,6 +42,10 @@ No additional or unnecessary packages beyond these will be installed.
 # lazy vps setup (rus)
 
 Bash скрипт для базовой настройки чистого VPS.<br><br>
+Запустить и следовать инструкциям:
+```
+bash -c "$(curl -Ls https://raw.githubusercontent.com/aiovin/lazy-vps/refs/heads/main/setup-ba.sh)"
+```
 Для **систем на основе systemd** (протестировано на Ubuntu 22.04, 24.04 и Debian 11, 12).
 
 <details>
