@@ -27,14 +27,8 @@ fi
 # A variable to run the script without script run counter (for creator's test purpose)
 NOHIT=""
 
-# Ansible verbose level
-VERBOSE=""
-
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        -v)   VERBOSE="-v" ;;
-        -vv)  VERBOSE="-vv" ;;
-        -vvv) VERBOSE="-vvv" ;;
         -nohit) NOHIT="yes" ;;
         -*)   echo "Invalid option: $1"; exit 1 ;;
     esac
