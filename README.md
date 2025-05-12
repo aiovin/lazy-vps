@@ -6,6 +6,13 @@ bash -c "$(curl -Ls https://raw.githubusercontent.com/aiovin/lazy-vps/refs/heads
 ```
 For **systemd-based systems** (tested on Ubuntu 22.04, 24.04 and Debian 11, 12).
 
+<details>
+<summary>Video example of how the script works</summary>
+
+https://github.com/user-attachments/assets/61b1e4ea-09e6-4562-98b9-301dd51dbe98
+
+</details>
+
 ### What it does:
 - System update.
 - Creation of a new user with sudo privileges.
