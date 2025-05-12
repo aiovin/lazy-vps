@@ -44,6 +44,13 @@ No additional or unnecessary packages beyond these will be installed.
 Bash скрипт для базовой настройки чистого VPS.<br><br>
 Для **систем на основе systemd** (протестировано на Ubuntu 22.04, 24.04 и Debian 11, 12).
 
+<details>
+<summary>Видео-демонстрация</summary>
+
+https://github.com/user-attachments/assets/61b1e4ea-09e6-4562-98b9-301dd51dbe98
+
+</details>
+
 ### Что делает скрипт:
 - Обновление системы.
 - Создание нового пользователя с правами sudo.
