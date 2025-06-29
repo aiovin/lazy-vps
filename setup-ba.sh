@@ -297,6 +297,7 @@ install_packages \
     gzip \
     logrotate \
     bash-completion \
+    jq \
     neofetch
 
 # Function to modify configuration files  
