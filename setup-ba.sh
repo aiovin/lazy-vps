@@ -392,6 +392,7 @@ declare -A aliases=(
     ["export EDITOR="]="export EDITOR=nano"
     ["alias tb="]='alias tb="nc termbin.com 9999"'
     ["listen()"]='listen() { sudo ss -tulnp | grep ":$1"; }'
+    ["alias wtt="]='alias wtt="curl wttr.in/Moscow?format=\"%l:+%t+%C+(Feels+like+%f)\n\""'
 )
 
 grep -Fxq "# === Custom Aliases ===" "$bashrc_file" || {
