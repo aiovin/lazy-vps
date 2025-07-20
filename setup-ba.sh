@@ -392,7 +392,8 @@ declare -A aliases=(
     ["export EDITOR="]="export EDITOR=nano"
     ["alias tb="]='alias tb="nc termbin.com 9999"'
     ["listen()"]='listen() { sudo ss -tulnp | grep ":$1"; }'
-    ["alias wtt="]='alias wtt="curl wttr.in/Moscow?format=\"%l:+%t+%C+(Feels+like+%f)\n\""'
+    ["alias wtt="]='alias wtt="curl -s wttr.in/Moscow?format=\"%l:+%t+%C+(Feels+like+%f)\n\""'
+    ["alias zenquote="]='alias zenquote="curl -s \"https://zenquotes.io/api/random\" | jq -r \".[0].q\""'
 )
 
 grep -Fxq "# === Custom Aliases ===" "$bashrc_file" || {
