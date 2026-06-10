@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # https://github.com/aiovin/lazy-vps
 
 # Enable strict mode, but don't exit the script on errors
