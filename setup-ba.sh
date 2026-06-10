@@ -446,7 +446,7 @@ After=network.target
 
 [Service]
 Type=oneshot
-ExecStart=/bin/sh -c '/usr/bin/curl -H "prio:default" -H "tags:${ntfy_startup_tag:-system}" -d "\$(hostname) started" "https://ntfy.sh/${ntfy_startup_topic}"'
+ExecStart=/bin/sh -c '/usr/bin/curl -H "prio:default" -H "tags:${ntfy_startup_tag:-system}" -d "\$(hostname) has successfully started" "https://ntfy.sh/${ntfy_startup_topic}"'
 User=root
 
 [Install]
