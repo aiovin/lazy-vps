@@ -6,7 +6,7 @@ set -uo pipefail
 
 # Function to handle errors
 handle_error() {
-    echo -e "\033[31mSomething went wrong on line $1.\033[0m Please describe the issue here: https://kutt.it/problem"
+    echo -e "\033[31mSomething went wrong on line $1.\033[0m Please describe the issue here: https://shorturl.at/Jxhb4"
 }
 
 # Set trap to catch errors and call the error handling function, but don't exit the script
@@ -298,6 +298,7 @@ install_packages \
     logrotate \
     bash-completion \
     jq \
+    dnsutils \
     neofetch
 
 # Function to modify configuration files  
@@ -366,10 +367,10 @@ chmod 600 "$user_ssh_dir/authorized_keys"
 chown -R "$new_user_name:$new_user_name" "$user_ssh_dir"
 
 # Commenting duplicates in 50-cloud-init.conf (if the file exists)
-cloud_init_file="/etc/ssh/sshd_config.d/50-cloud-init.conf"
-if [ -f "$cloud_init_file" ]; then
-    sed -i -E 's/^(Port|PermitRootLogin|PubkeyAuthentication|PasswordAuthentication)/# \1/' "$cloud_init_file"
-fi
+for conf_file in /etc/ssh/sshd_config.d/*.conf; do
+    [ -f "$conf_file" ] && \
+    sed -i -E 's/^(Port|PermitRootLogin|PubkeyAuthentication|PasswordAuthentication)/# \1/' "$conf_file"
+done
 
 # Configure firewall
 echo -e "${GREEN}[$progress_tag]${NC} Configuring UFW.."
@@ -385,15 +386,44 @@ fi
 
 # Array of aliases
 declare -A aliases=(
+    ["export EDITOR="]="export EDITOR=nano"
     ["alias cls="]="alias cls='clear'"
     ["alias сды="]="alias сды='clear'"
     ["alias act="]="alias act='source venv/bin/activate'"
     ["alias x="]="alias x='exit'"
-    ["export EDITOR="]="export EDITOR=nano"
-    ["alias tb="]='alias tb="nc termbin.com 9999"'
+    ["alias cp="]="alias cp='cp -i'"
+    ["alias mv="]="alias mv='mv -i'"
+    ["alias rm="]="alias rm='rm -i'"
+    ["alias hr="]="alias hr='numfmt --to=iec --suffix=b'"
     ["listen()"]='listen() { sudo ss -tulnp | grep ":$1"; }'
-    ["alias wtt="]='alias wtt="curl -s wttr.in/Moscow?format=\"%l:+%t+%C+(Feels+like+%f)\n\""'
-    ["alias zenquote="]='alias zenquote="curl -s \"https://zenquotes.io/api/random\" | jq -r \".[0].q\""'
+    ["alias portgen="]="alias portgen='echo \$(shuf -i 1024-9999 -n 10)'"
+    ["passgen()"]='passgen() {
+    tr -dc '"'"'A-Za-z0-9!@#$%^&*()_+'"'"' < /dev/urandom | head -c "${1:-16}"
+    echo
+}'
+    ["ipinfo()"]='ipinfo() {
+  [[ -z "$1" ]] && { echo "usage: ipinfo [ip|domain]"; return 1; }
+  local target="$1"
+  local ip
+  if [[ "$target" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+    ip="$target"
+  elif [[ "$target" =~ : ]]; then
+    ip="$target"
+  else
+    local ips
+    mapfile -t ips < <(host "$target" 2>/dev/null | awk '"'"'/has address/{print $NF} /has IPv6 address/{print $NF}'"'"')
+    [[ ${#ips[@]} -eq 0 ]] && { echo "error: could not resolve '"'"'$target'"'"'"; return 1; }
+    if [[ ${#ips[@]} -gt 1 ]]; then
+      echo "found ${#ips[@]} addresses for '"'"'$target'"'"':"
+      for i in "${!ips[@]}"; do
+        echo "  ${ips[$i]}"
+      done
+      echo
+    fi
+    ip="${ips[0]}"
+  fi
+  curl -s "https://ipinfo.io/$ip" | jq .
+}'
 )
 
 grep -Fxq "# === Custom Aliases ===" "$bashrc_file" || {
@@ -422,7 +452,7 @@ else
 fi
 
 # Changing TCP Congestion Control
-echo -e "${GREEN}[$progress_tag]${NC} Configuring TCP BBR.."
+echo -e "${GREEN}[$progress_tag]${NC} Configuring TCP BBR and FQ.."
 {
     echo "net.core.default_qdisc=fq"
     echo "net.ipv4.tcp_congestion_control=bbr"
@@ -446,7 +476,7 @@ After=network.target
 
 [Service]
 Type=oneshot
-ExecStart=/bin/sh -c '/usr/bin/curl -H "prio:default" -H "tags:${ntfy_startup_tag:-system}" -d "\$(hostname) has successfully started" "https://ntfy.sh/${ntfy_startup_topic}"'
+ExecStart=/bin/sh -c '/usr/bin/curl -H "prio:default" -H "tags:${ntfy_startup_tag:-system}" -d "\$(hostname) started" "https://ntfy.sh/${ntfy_startup_topic}"'
 User=root
 
 [Install]
@@ -528,14 +558,15 @@ systemctl daemon-reload
 systemctl restart ssh >/dev/null
 systemctl enable ssh >/dev/null 2>&1
 
-ufw reload >/dev/null
+ufw default deny incoming >/dev/null
 ufw --force enable >/dev/null
+ufw reload >/dev/null
 
 # Clear sensitive variable from memory
 unset root_password new_user_password public_ssh_key
 
 echo
-runuser -u $new_user_name -- neofetch
+runuser -u "$new_user_name" -- neofetch
 
 print_check() {
     if [ $1 -eq 0 ]; then
@@ -548,49 +579,46 @@ print_check() {
 # Small check of main server settings
 echo -e "Completion check..\n"
 
-systemctl is-enabled ssh | grep -q "enabled"
+systemctl is-enabled ssh | grep -qi "enabled"
 print_check $? "SSH server is set to enabled"
 
-ufw status | grep -q "Status: active"
+ufw status | grep -qi "Status: active"
 print_check $? "UFW is running"
 
-grep -q "^Port $new_ssh_port" /etc/ssh/sshd_config
+systemctl is-enabled ufw | grep -qi "enabled"
+print_check $? "UFW is set to enabled"
+
+grep "DEFAULT_INPUT_POLICY" /etc/default/ufw | grep -qi DROP
+print_check $? "UFW default policy is DROP"
+
+grep -qi "^Port $new_ssh_port" /etc/ssh/sshd_config
 print_check $? "SSH port: $new_ssh_port"
 
 ufw status | grep -q "$new_ssh_port/tcp"
 print_check $? "Port $new_ssh_port is open"
 
-systemctl is-enabled ufw | grep -q "enabled"
-print_check $? "UFW is set to enabled"
-
-grep -q "^PermitRootLogin no" /etc/ssh/sshd_config
+sudo sshd -T 2>/dev/null | grep -i permitrootlogin | grep -qiw "no"
 print_check $? "Root login disabled"
 
-grep -q "^PasswordAuthentication no" /etc/ssh/sshd_config
+sudo sshd -T 2>/dev/null | grep -i passwordAuthentication | grep -qw "no"
 print_check $? "Password authentication disabled"
 
-grep -q "^PubkeyAuthentication yes" /etc/ssh/sshd_config
+sudo sshd -T 2>/dev/null | grep -i pubkeyAuthentication | grep -qiw "yes"
 print_check $? "SSH key authentication enabled"
 
 [ -f "/home/$new_user_name/.ssh/authorized_keys" ] && [ -s "/home/$new_user_name/.ssh/authorized_keys" ]
 print_check $? "Public SSH key successfully added to user $new_user_name"
 
-# Ensure conflicting settings are commented out
-echo "Contents of 50-cloud-init.conf:"
-if [ -f /etc/ssh/sshd_config.d/50-cloud-init.conf ]; then
-    sed 's/^/    /' /etc/ssh/sshd_config.d/50-cloud-init.conf
-else
-    echo -e "\e[31m[FAIL]\e[0m File 50-cloud-init.conf not found"
-fi
+sysctl net.ipv4.tcp_congestion_control 2>/dev/null | grep -qi "bbr"
+print_check $? "TCP congestion control set to BBR"
 
-sysctl net.ipv4.tcp_congestion_control 2>/dev/null | grep -q "bbr"
-check_status=$?
-print_check $check_status "TCP congestion control set to BBR"
+sysctl net.core.default_qdisc 2>/dev/null | grep -qiw "fq"
+print_check $? "Default qdisc set to FQ"
 
 # Finishing
 
 # Get server IP to form connection link
-server_ip=$(curl -s --max-time 5 ident.me || hostname -I | awk '{print $1}')
+server_ip=$(curl -s --max-time 5 ident.me || { hostname -I | awk '{print $1}'; })
 
 # Count script runs using hitscounter.dev
 if ! mktemp -u --suffix=RRC &>/dev/null; then
