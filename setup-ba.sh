@@ -41,7 +41,7 @@ L_YELLOW='\033[1;33m'
 RED='\033[0;31m'
 PURPLE='\033[95m'
 BLUE='\033[1;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
 # Install necessary packages
 echo "Updating the system.."
@@ -298,8 +298,7 @@ install_packages \
     logrotate \
     bash-completion \
     jq \
-    dnsutils \
-    neofetch
+    dnsutils
 
 # Function to modify configuration files  
 # It removes all duplicate lines with the parameter (including commented ones)  
@@ -476,7 +475,7 @@ After=network.target
 
 [Service]
 Type=oneshot
-ExecStart=/bin/sh -c '/usr/bin/curl -H "prio:default" -H "tags:${ntfy_startup_tag:-system}" -d "\$(hostname) started" "https://ntfy.sh/${ntfy_startup_topic}"'
+ExecStart=/bin/sh -c '/usr/bin/curl -H "prio:default" -H "tags:${ntfy_startup_tag:-system}" -d "\$(hostname) has successfully started" "https://ntfy.sh/${ntfy_startup_topic}"'
 User=root
 
 [Install]
@@ -565,8 +564,19 @@ ufw reload >/dev/null
 # Clear sensitive variable from memory
 unset root_password new_user_password public_ssh_key
 
-echo
-runuser -u "$new_user_name" -- neofetch
+# Server info summary
+pad() { printf "%-30.30s" "$1"; }
+echo -e "\n  ${BLUE}- - - - - - - - - - - - - -${NC}"
+echo -e "      ${GREEN}Server is ready${NC}"
+echo -e "  ${BLUE}- - - - - - - - - - - - - -${NC}"
+echo -e "  Hostname : $(pad "$(hostname)")"
+echo -e "  OS       : $(pad "$(. /etc/os-release && echo "$PRETTY_NAME")")"
+echo -e "  Kernel   : $(pad "$(uname -r)")"
+echo -e "  Uptime   : $(pad "$(uptime -p | sed 's/up //')")"
+echo -e "  CPU      : $(pad "$(nproc) cores")"
+echo -e "  RAM      : $(pad "$(free -h | awk '/^Mem/{print $2}')")"
+echo -e "  Disk     : $(pad "$(df -h / | awk 'NR==2{print $2}')")"
+echo -e "  ${BLUE}- - - - - - - - - - - - - -${NC}\n"
 
 print_check() {
     if [ $1 -eq 0 ]; then
