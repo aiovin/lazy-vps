@@ -46,6 +46,7 @@ NC='\033[0m'
 # Install necessary packages
 echo "Updating the system.."
 
+apt-get install -y apt-utils >/dev/null 2>&1
 apt-get update >/dev/null
 apt-get upgrade -y >/dev/null
 
