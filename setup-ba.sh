@@ -6,7 +6,7 @@ set -uo pipefail
 
 # Function to handle errors
 handle_error() {
-    echo -e "\033[31mSomething went wrong on line $1.\033[0m Please describe the issue here: https://shorturl.at/Jxhb4"
+    echo -e "\033[31mSomething went wrong on line $1.\033[0m"
 }
 
 # Set trap to catch errors and call the error handling function, but don't exit the script
@@ -46,7 +46,6 @@ NC='\033[0m'
 # Install necessary packages
 echo "Updating the system.."
 
-apt-get install -y apt-utils >/dev/null 2>&1
 apt-get update >/dev/null
 apt-get upgrade -y >/dev/null
 
@@ -282,13 +281,13 @@ echo
 
 progress_tag=">"
 
-# Function to install basic utilities
+# Function to install utilities
 install_packages() {
-    echo -e "${GREEN}[$progress_tag]${NC} Installing basic utilities: $*"
+    echo -e "${GREEN}[$progress_tag]${NC} Installing utilities: $*"
     apt-get install -y "$@" >/dev/null 2>&1
 }
 
-# Install basic utilities
+# Install utilities
 install_packages \
     sudo \
     nano \
@@ -638,7 +637,7 @@ else
     count_file=$(mktemp --suffix=RRC)
 fi
 
-api_url="https://hitscounter.dev/api/hit?url=https%3A%2F%2Fraw.githubusercontent.com%2Faiovin%2Flazy-vps%2Frefs%2Fheads%2Fmain%2Fsetup-ba.sh"
+api_url="https://hitscounter.dev/api/hit?url=https%3A%2F%2Fraw.githubusercontent.com%2Faiovin%2Flazy-vps%2Frefs%2Fheads%2Fmain%2Fsetup.sh"
 
 if [[ "$NOHIT" == "yes" ]]; then
     total_runs="disabled"
@@ -672,8 +671,6 @@ echo -e "Afterwards, you can connect to the server using the command '${YELLOW}s
 echo -e "\033[1;31mAttention!${NC}"
 echo "Do not disconnect from the current session until you test the new connection."
 echo "Make sure it works. After that, reboot the server."
-# Perhaps you shouldn't..
-# echo -e "\nVisit author's site: https://150452.xyz"
 
 echo -e "
 ${L_YELLOW}Note:${NC} For an additional security check of your server,
