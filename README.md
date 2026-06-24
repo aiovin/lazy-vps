@@ -20,7 +20,7 @@ For **systemd-based systems** (tested on Ubuntu 22.04, 24.04 and Debian 11, 12).
 After running the cript, it will first update your system, then it will guide you through entering required configuration details such as new user credentials, SSH port, timezone, and other settings. After that script will perform the server setup using provided parameters. At the end, the script will verify the changes made and display your new SSH connection command with all the updated settings.
 
 ### Installed packages:
-Will be instaled: sudo, nano, ufw, curl, htop, gzip, logrotate, bash-completion, jq. Most of them are typically pre-installed in modern distributions.
+Will be instaled: sudo, nano, ufw, curl, htop, gzip, logrotate, bash-completion, jq, dnsutils. Most of them are typically pre-installed in modern distributions.
 No additional or unnecessary packages beyond these will be installed.
 
 ---
@@ -62,5 +62,5 @@ https://github.com/user-attachments/assets/61b1e4ea-09e6-4562-98b9-301dd51dbe98
 После запуска скрипта, он обновит вашу систему затем он предложит вам ввести требуемые параметры для настройки, такие как учетные данные нового пользователя, порт SSH, временная зона и т.п. Затем скрипт выполнит настройку сервера с использованием предоставленных параметров. В конце работы скрипт проверит сделанные изменения и выведет команду для SSH-подключения с учетом всех новых настроек.
 
 ### Устанавливаемые пакеты:
-Будет установлено: sudo, nano, ufw, curl, htop, gzip, logrotate, bash-completion, jq. Большинство этих утилит обычно предустановлены в современных дистрибутивах.
+Будет установлено: sudo, nano, ufw, curl, htop, gzip, logrotate, bash-completion, jq, dnsutils. Большинство этих утилит обычно предустановлены в современных дистрибутивах.
 Никаких дополнительных или ненужных пакетов помимо этих установлено не будет.
