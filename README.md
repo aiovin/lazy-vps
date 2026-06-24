@@ -2,7 +2,7 @@
 Bash script for basic and secure VPS setup.<br><br>
 Just run on a newly created VPS:
 ```
-bash -c "$(curl -Ls https://raw.githubusercontent.com/aiovin/lazy-vps/refs/heads/main/setup-ba.sh)"
+bash -c "$(curl -Ls https://raw.githubusercontent.com/aiovin/lazy-vps/refs/heads/main/setup.sh)"
 ```
 For **systemd-based systems** (tested on Ubuntu 22.04, 24.04 and Debian 11, 12).
 
