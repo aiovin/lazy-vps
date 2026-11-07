@@ -10,6 +10,8 @@ NC='\033[0m'
 print_check() {
     if [ "$1" -eq 0 ]; then
         echo -e "${GREEN}[OK]${NC}   $2"
+    elif [ "$1" -eq 2 ]; then
+        echo -e "${YELLOW}[WARN]${NC} $2"
     else
         echo -e "${RED}[FAIL]${NC} $2"
     fi
@@ -26,19 +28,37 @@ fi
 
 echo -e "${BLUE}=== VPS Security Check ===${NC}\n"
 
+sshd_conf=$(sshd -T 2>/dev/null)
+
 # --- SSH ---
 echo -e "${BLUE}SSH${NC}"
 
-ssh_port=$(sshd -T 2>/dev/null | awk '/^port /{print $2}')
-print_info "SSH port: ${ssh_port:-unknown}"
+ssh_port=$(awk '/^port /{print $2}' <<< "$sshd_conf")
+if [ -z "$ssh_port" ]; then
+    print_check 1 "Could not determine SSH port from 'sshd -T'"
+    exit 1
+fi
+print_info "SSH port: $ssh_port"
 
-sshd -T 2>/dev/null | grep -i permitrootlogin | grep -qiw "no"
+ss -tlnp | grep sshd | grep -qE ":$ssh_port( |$)"
+print_check $? "sshd is listening on port $ssh_port"
+
+iptables -S | grep -qE -- "--dport $ssh_port( |$)"
+print_check $? "Port $ssh_port is open in the kernel firewall"
+
+grep -qiw "permitrootlogin no" <<< "$sshd_conf"
 print_check $? "Root login disabled"
 
-sshd -T 2>/dev/null | grep -i passwordauthentication | grep -qiw "no"
-print_check $? "Password authentication disabled"
+pw_auth=$(awk '/^passwordauthentication /{print $2}' <<< "$sshd_conf")
+if [ "$pw_auth" = "no" ]; then
+    print_check 0 "Password authentication disabled"
+elif command -v fail2ban-client >/dev/null 2>&1; then
+    print_info "Password authentication is ENABLED (fail2ban is installed)"
+else
+    print_check 2 "Password authentication is ENABLED and fail2ban is not installed"
+fi
 
-sshd -T 2>/dev/null | grep -i pubkeyauthentication | grep -qiw "yes"
+grep -qiw "pubkeyauthentication yes" <<< "$sshd_conf"
 print_check $? "Public key authentication enabled"
 
 systemctl is-enabled ssh 2>/dev/null | grep -qi "enabled"
@@ -55,11 +75,54 @@ print_check $? "UFW is active"
 systemctl is-enabled ufw 2>/dev/null | grep -qi "enabled"
 print_check $? "UFW enabled on boot"
 
-grep "DEFAULT_INPUT_POLICY" /etc/default/ufw 2>/dev/null | grep -qi "DROP"
-print_check $? "Default incoming policy: DROP"
+LC_ALL=C ufw status verbose 2>/dev/null | grep -qi "deny (incoming)"
+print_check $? "UFW default policy is deny (incoming)"
 
 echo -e "${YELLOW}[INFO]${NC} SSH Port status:"
-ufw status 2>/dev/null | grep -E "ALLOW|LIMIT" | grep "$ssh_port" | sed 's/^/       /'
+ufw status 2>/dev/null | grep -E "ALLOW|LIMIT" | grep -E "(^| )$ssh_port/" | sed 's/^/       /'
+
+echo
+
+# --- fail2ban ---
+echo -e "${BLUE}fail2ban${NC}"
+
+if command -v fail2ban-client >/dev/null 2>&1; then
+    systemctl is-active fail2ban 2>/dev/null | grep -qiw "active"
+    print_check $? "fail2ban is running"
+
+    systemctl is-enabled fail2ban 2>/dev/null | grep -qi "enabled"
+    print_check $? "fail2ban is enabled on boot"
+
+    if fail2ban-client status sshd >/dev/null 2>&1; then
+        journal_match=$(fail2ban-client get sshd journalmatch 2>/dev/null || true)
+        logpath=$(fail2ban-client get sshd logpath 2>/dev/null || true)
+        if [[ -n "$journal_match" && "$journal_match" != *"(none)"* ]] || \
+           [[ -n "$logpath" && "$logpath" != *"No file is currently monitored"* ]]; then
+            print_check 0 "fail2ban is monitoring SSH logs"
+        else
+            print_check 1 "fail2ban jail is running, but no log source detected"
+        fi
+    else
+        print_check 1 "fail2ban sshd jail is not responding"
+    fi
+
+    if ! command -v nft >/dev/null 2>&1; then
+        print_check 2 "nft not found: fail2ban may be unable to apply bans if it uses nftables"
+    fi
+
+    nftables_enabled=0
+    systemctl is-enabled nftables.service >/dev/null 2>&1 && nftables_enabled=1
+    systemctl is-active  nftables.service >/dev/null 2>&1 && nftables_enabled=1
+
+    if [ "$nftables_enabled" -eq 1 ]; then
+        print_check 2 "nftables.service is enabled/active (can conflict with UFW/fail2ban)"
+        print_info "Consider: systemctl disable --now nftables"
+    else
+        print_check 0 "nftables.service is not enabled"
+    fi
+else
+    print_info "fail2ban is not installed (expected in key-only mode)"
+fi
 
 echo
 
