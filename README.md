@@ -1,10 +1,30 @@
-# lazy vps setup
+# [ENG] lazy vps setup
 Bash script for basic and secure VPS setup.<br><br>
 Just run on a newly created VPS:
-```
+
+```bash
 bash -c "$(curl -Ls https://raw.githubusercontent.com/aiovin/lazy-vps/refs/heads/main/setup.sh)"
 ```
-For **systemd-based systems** (tested on Ubuntu 22.04, 24.04 and Debian 11, 12).
+For **systemd-based systems** (tested on Ubuntu 22.04, 24.04 and Debian 12, 13).
+
+## Options
+
+The script can be run with optional flags:
+
+| Flag | Description |
+|------|-------------|
+| `--help`, `-h` | Show usage information and exit |
+| `--password-auth`, `-p` | Use password authentication instead of an SSH key (installs and configures fail2ban) |
+| `--allow-weak-passwords` | Disable the minimum password length check |
+| `--skip-update-upgrade` | Skip `apt update` and `apt upgrade` |
+
+Example: show the help message
+
+```bash
+bash -c "$(curl -Ls https://raw.githubusercontent.com/aiovin/lazy-vps/refs/heads/main/setup.sh)" -- --help
+```
+
+Flags can be combined, for example `-- --password-auth --allow-weak-passwords`.
 
 ### What it does:
 - System update.
@@ -32,14 +52,46 @@ No additional or unnecessary packages beyond these will be installed.
 
 ---
 
-# lazy vps setup (rus)
+### Security check
+
+There is also a separate script, `check.sh`, that prints a short security summary of an already configured server (SSH, UFW, fail2ban, network settings). It only reads the current state and changes nothing.
+
+```bash
+sudo bash -c "$(curl -Ls https://raw.githubusercontent.com/aiovin/lazy-vps/refs/heads/main/check.sh)"
+```
+
+Results are shown as `[OK]`, `[WARN]` and `[FAIL]`.
+
+---
+
+# [RUS] lazy vps setup
 
 Bash скрипт для базовой настройки чистого VPS.<br><br>
 Запустить и следовать инструкциям:
-```
+
+```bash
 bash -c "$(curl -Ls https://raw.githubusercontent.com/aiovin/lazy-vps/refs/heads/main/setup.sh)"
 ```
-Для **систем на основе systemd** (протестировано на Ubuntu 22.04, 24.04 и Debian 11, 12).
+Для **систем на основе systemd** (протестировано на Ubuntu 22.04, 24.04 и Debian 12, 13).
+
+## Параметры запуска
+
+Скрипт можно запускать с необязательными ключами:
+
+| Ключ | Описание |
+|------|----------|
+| `--help`, `-h` | Показать справку и выйти |
+| `--password-auth`, `-p` | Вход по паролю вместо SSH-ключа (устанавливается и настраивается fail2ban) |
+| `--allow-weak-passwords` | Отключить проверку минимальной длины пароля |
+| `--skip-update-upgrade` | Пропустить `apt update` и `apt upgrade` |
+
+Пример: показать справку
+
+```bash
+bash -c "$(curl -Ls https://raw.githubusercontent.com/aiovin/lazy-vps/refs/heads/main/setup.sh)" -- --help
+```
+
+Ключи можно комбинировать, например `-- --password-auth --allow-weak-passwords`.
 
 ### Что делает скрипт:
 - Обновление системы.
@@ -57,3 +109,15 @@ bash -c "$(curl -Ls https://raw.githubusercontent.com/aiovin/lazy-vps/refs/heads
 ### Устанавливаемые пакеты:
 Будет установлено: sudo, nano, ufw, curl, htop, gzip, logrotate, bash-completion, jq, dnsutils. Большинство этих утилит обычно предустановлены в современных дистрибутивах.
 Никаких дополнительных или ненужных пакетов помимо этих установлено не будет.
+
+---
+
+### Проверка безопасности
+
+Есть и отдельный скрипт `check.sh`: он выводит короткую сводку по безопасности уже настроенного сервера (SSH, UFW, fail2ban, сетевые настройки). Скрипт только читает текущее состояние и ничего не меняет.
+
+```bash
+bash -c "$(curl -Ls https://raw.githubusercontent.com/aiovin/lazy-vps/refs/heads/main/check.sh)"
+```
+
+Результаты показываются как `[OK]`, `[WARN]` и `[FAIL]`.
