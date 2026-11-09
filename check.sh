@@ -3,22 +3,22 @@
 
 GREEN='\033[0;32m'
 RED='\033[0;31m'
-YELLOW='\033[0;33m'
+L_YELLOW='\033[1;33m'
 BLUE='\033[1;34m'
 NC='\033[0m'
 
 print_check() {
     if [ "$1" -eq 0 ]; then
-        echo -e "${GREEN}[OK]${NC}   $2"
+        echo -e "${GREEN}[ OK ]${NC} $2"
     elif [ "$1" -eq 2 ]; then
-        echo -e "${YELLOW}[WARN]${NC} $2"
+        echo -e "${L_YELLOW}[WARN]${NC} $2"
     else
         echo -e "${RED}[FAIL]${NC} $2"
     fi
 }
 
 print_info() {
-    echo -e "${YELLOW}[INFO]${NC} $1"
+    echo -e "${L_YELLOW}[INFO]${NC} $1"
 }
 
 if [ "$(id -u)" -ne 0 ]; then
@@ -58,11 +58,25 @@ else
     print_check 2 "Password authentication is ENABLED and fail2ban is not installed"
 fi
 
+kbd_auth=$(awk '/^kbdinteractiveauthentication /{print $2}' <<< "$sshd_conf")
+if [ "$kbd_auth" = "no" ]; then
+    print_check 0 "Keyboard-interactive authentication disabled"
+elif [ "$pw_auth" = "no" ]; then
+    print_check 1 "Keyboard-interactive authentication is ENABLED: password login is still possible"
+else
+    print_info "Keyboard-interactive authentication is enabled (password mode)."
+    echo "       Disable it if you later switch to key authentication."
+fi
+
 grep -qiw "pubkeyauthentication yes" <<< "$sshd_conf"
 print_check $? "Public key authentication enabled"
 
-systemctl is-enabled ssh 2>/dev/null | grep -qi "enabled"
-print_check $? "SSH service enabled on boot"
+if systemctl is-enabled ssh 2>/dev/null | grep -qi "enabled" || \
+   systemctl is-enabled ssh.socket 2>/dev/null | grep -qi "enabled"; then
+    print_check 0 "SSH service (or socket) enabled on boot"
+else
+    print_check 1 "SSH service (or socket) enabled on boot"
+fi
 
 echo
 
@@ -78,7 +92,7 @@ print_check $? "UFW enabled on boot"
 LC_ALL=C ufw status verbose 2>/dev/null | grep -qi "deny (incoming)"
 print_check $? "UFW default policy is deny (incoming)"
 
-echo -e "${YELLOW}[INFO]${NC} SSH Port status:"
+echo -e "${L_YELLOW}[INFO]${NC} SSH Port status:"
 ufw status 2>/dev/null | grep -E "ALLOW|LIMIT" | grep -E "(^| )$ssh_port/" | sed 's/^/       /'
 
 echo
