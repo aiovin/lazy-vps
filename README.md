@@ -46,7 +46,7 @@ No additional or unnecessary packages beyond these will be installed.
 ---
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/aiovin/lazy-vps/main/screenshot.png" width="75%">
+  <img src="https://raw.githubusercontent.com/aiovin/lazy-vps/main/image.png" width="75%">
   <br><i>Script finish</i>
 </p>
 
