@@ -439,6 +439,12 @@ replace_config "PubkeyAuthentication" "PubkeyAuthentication yes" "/etc/ssh/sshd_
 
 if [[ "$AUTH_METHOD" == "key" ]]; then
     replace_config "PasswordAuthentication" "PasswordAuthentication no" "/etc/ssh/sshd_config"
+    replace_config "KbdInteractiveAuthentication" "KbdInteractiveAuthentication no" "/etc/ssh/sshd_config"
+
+    for conf_file in /etc/ssh/sshd_config.d/*.conf; do
+        [ -f "$conf_file" ] && \
+        sed -i -E 's/^[[:space:]]*(KbdInteractiveAuthentication|ChallengeResponseAuthentication)\b/# \1/I' "$conf_file"
+    done
 
     # Adding SSH key
     user_ssh_dir="/home/$new_user_name/.ssh"
@@ -454,10 +460,10 @@ if [[ "$AUTH_METHOD" == "password" ]]; then
     replace_config "PasswordAuthentication" "PasswordAuthentication yes" "/etc/ssh/sshd_config"
 fi
 
-# Commenting duplicates in 50-cloud-init.conf (if the file exists)
+# Comment out conflicting options in sshd_config.d/*.conf (cloud-init, provider images)
 for conf_file in /etc/ssh/sshd_config.d/*.conf; do
     [ -f "$conf_file" ] && \
-    sed -i -E 's/^(Port|PermitRootLogin|PubkeyAuthentication|PasswordAuthentication)/# \1/' "$conf_file"
+    sed -i -E 's/^[[:space:]]*(Port|PermitRootLogin|PubkeyAuthentication|PasswordAuthentication)\b/# \1/I' "$conf_file"
 done
 
 # Configure fail2ban
@@ -680,6 +686,8 @@ if ! systemctl restart ssh >/dev/null; then
     cp /etc/ssh/sshd_config /etc/ssh/sshd_config.broken
     cp /etc/ssh/sshd_config.bak /etc/ssh/sshd_config
 
+    systemctl daemon-reload
+
     # Restart sshd with the restored config
     if systemctl restart ssh >/dev/null 2>&1; then
         echo "Config restored, SSH restarted with the original config (old port)."
@@ -704,7 +712,7 @@ unset root_password new_user_password public_ssh_key root_password_confirm new_u
 
 print_check() {
     if [ "$1" -eq 0 ]; then
-        echo -e "${GREEN}[OK]${NC} $2"
+        echo -e "${GREEN}[ OK ]${NC} $2"
     elif [ "$1" -eq 2 ]; then
         echo -e "${L_YELLOW}[WARN]${NC} $2"
     else
@@ -741,10 +749,13 @@ sshd -T 2>/dev/null | grep -i permitrootlogin | grep -qiw "no"
 print_check $? "Root login over SSH disabled"
 
 if [[ "$AUTH_METHOD" == "key" ]]; then
-    sshd -T 2>/dev/null | grep -i passwordAuthentication | grep -qw "no"
+    sshd -T 2>/dev/null | grep -i passwordAuthentication | grep -qiw "no"
     print_check $? "Password authentication disabled"
 
-    sshd -T 2>/dev/null | grep -i pubkeyAuthentication | grep -qiw "yes"
+    sshd -T 2>/dev/null | grep -i "kbdinteractiveauthentication" | grep -qiw "no"
+    print_check $? "Keyboard-interactive authentication disabled"
+
+    sshd -T 2>/dev/null | grep -i "pubkeyAuthentication" | grep -qiw "yes"
     print_check $? "SSH key authentication enabled"
 
     [ -f "/home/$new_user_name/.ssh/authorized_keys" ] && [ -s "/home/$new_user_name/.ssh/authorized_keys" ]
@@ -752,8 +763,16 @@ if [[ "$AUTH_METHOD" == "key" ]]; then
 fi
 
 if [[ "$AUTH_METHOD" == "password" ]]; then
-    sshd -T 2>/dev/null | grep -i passwordAuthentication | grep -qw "yes"
+    sshd -T 2>/dev/null | grep -i "passwordAuthentication" | grep -qw "yes"
     print_check $? "${L_YELLOW}Password authentication enabled${NC}"
+
+    kbd_auth=$(sshd -T 2>/dev/null | awk '/^kbdinteractiveauthentication /{print $2}')
+    if [[ "$kbd_auth" == "no" ]]; then
+        print_check 0 "Keyboard-interactive authentication disabled"
+    else
+        echo -e "${L_YELLOW}[INFO]${NC} Keyboard-interactive authentication is enabled (password mode)."
+        echo "       Disable it if you later switch to key authentication."
+    fi
 
     systemctl is-active fail2ban | grep -qiw "active"
     print_check $? "fail2ban is running"
@@ -784,8 +803,8 @@ if [[ "$AUTH_METHOD" == "password" ]]; then
 
     if [ "$nftables_enabled" -eq 1 ]; then
         print_check 2 "${L_YELLOW}nftables.service is enabled/active.${NC}"
-        echo -e "      It can conflict with UFW (and sometimes with fail2ban)."
-        echo -e "      Consider disabling it: systemctl disable --now nftables"
+        echo "      It can conflict with UFW (and sometimes with fail2ban)."
+        echo "      Consider disabling it: systemctl disable --now nftables"
     else
         # print_check 0 "nftables is not enabled"
         :
